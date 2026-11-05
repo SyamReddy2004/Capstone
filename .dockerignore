@@ -1,0 +1,12 @@
+*
+!Documents/quantum-benchmark-app/
+**/node_modules
+**/venv
+**/__pycache__
+**/.DS_Store
+*.pyc
+*.pyo
+*.pyd
+.env
+Documents/quantum-benchmark-app/frontend/dist
+
