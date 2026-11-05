@@ -20,6 +20,10 @@ class EvalRequest(BaseModel):
     task: str
     models: list[str]
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
 @app.post("/api/evaluate")
 async def evaluate_models(request: EvalRequest):
     if not request.models:
@@ -39,12 +43,16 @@ async def evaluate_models(request: EvalRequest):
         accuracy = min(100, max(10, accuracy))
         efficiency = min(100, max(10, accuracy - random.uniform(0, 15)))
         syntax_errors = random.randint(0, 15)
+        gate_count = random.randint(4, 28) + (12 if "QFT" in task else 0)
+        circuit_depth = max(2, gate_count // random.randint(2, 4))
         
         results.append({
             "name": model,
             "accuracy": round(accuracy, 1),
             "efficiency": round(efficiency, 1),
-            "syntaxErrors": syntax_errors
+            "syntaxErrors": syntax_errors,
+            "gateCount": gate_count,
+            "circuitDepth": circuit_depth,
         })
         
     return {"task": task, "results": results}
@@ -53,3 +61,18 @@ async def evaluate_models(request: EvalRequest):
 frontend_dist = os.path.join(os.path.dirname(__file__), "../../frontend/dist")
 if os.path.exists(frontend_dist):
     app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="static")
+
+    @app.exception_handler(404)
+    async def not_found_handler(request, exc):
+        index_file = os.path.join(frontend_dist, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        return {"detail": "Not Found"}
+
+
+    @app.exception_handler(404)
+    async def not_found_handler(request, exc):
+        index_file = os.path.join(frontend_dist, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        return {"detail": "Not Found"}

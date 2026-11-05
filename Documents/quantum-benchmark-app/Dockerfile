@@ -1,23 +1,33 @@
-FROM python:3.10-slim
-
-# Install Node.js for building frontend
-RUN apt-get update && apt-get install -y nodejs npm
-
-WORKDIR /app
-
-# Copy project files
-COPY . .
-
-# Build Frontend
+# ── Stage 1: Build Frontend ─────────────────────────
+FROM node:20-slim AS frontend-builder
 WORKDIR /app/frontend
-RUN npm install
+
+COPY frontend/package*.json ./
+RUN npm ci || npm install
+
+COPY frontend/ ./
 RUN npm run build
 
-# Install Backend dependencies
-WORKDIR /app/backend
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install fastapi uvicorn pydantic
+# ── Stage 2: Python Backend Runtime ─────────────────
+FROM python:3.10-slim AS runner
+WORKDIR /app
 
-# Run Backend (which now also serves the frontend)
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Install backend dependencies (cached layer)
+COPY backend/requirements.txt ./backend/
+RUN pip install --no-cache-dir -r ./backend/requirements.txt
+
+# Copy backend application source
+COPY backend/ ./backend/
+
+# Copy built frontend assets from stage 1
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+
+WORKDIR /app/backend
+
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Support dynamic PORT from cloud hosts (Render, Railway, Fly) with 8000 fallback
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
