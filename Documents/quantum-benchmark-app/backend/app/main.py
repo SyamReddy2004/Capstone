@@ -68,11 +68,3 @@ if os.path.exists(frontend_dist):
         if os.path.exists(index_file):
             return FileResponse(index_file)
         return {"detail": "Not Found"}
-
-
-    @app.exception_handler(404)
-    async def not_found_handler(request, exc):
-        index_file = os.path.join(frontend_dist, "index.html")
-        if os.path.exists(index_file):
-            return FileResponse(index_file)
-        return {"detail": "Not Found"}
