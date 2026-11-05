@@ -2,10 +2,10 @@
 FROM node:20-slim AS frontend-builder
 WORKDIR /app/frontend
 
-COPY frontend/package*.json ./
+COPY Documents/quantum-benchmark-app/frontend/package*.json ./
 RUN npm ci || npm install
 
-COPY frontend/ ./
+COPY Documents/quantum-benchmark-app/frontend/ ./
 RUN npm run build
 
 # ── Stage 2: Python Backend Runtime ─────────────────
@@ -16,11 +16,11 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 # Install backend dependencies (cached layer)
-COPY backend/requirements.txt ./backend/
+COPY Documents/quantum-benchmark-app/backend/requirements.txt ./backend/
 RUN pip install --no-cache-dir -r ./backend/requirements.txt
 
 # Copy backend application source
-COPY backend/ ./backend/
+COPY Documents/quantum-benchmark-app/backend/ ./backend/
 
 # Copy built frontend assets from stage 1
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
